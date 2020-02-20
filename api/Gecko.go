@@ -12,9 +12,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"github.com/tidwall/gjson"
 	gecko "github.com/superoo7/go-gecko/v3"
-	"GO/BTC/api"
-	//*mgo.Database
+	"bufio"
+	//"btc/go"
 )
+
 
 const (
 	URL = "127.0.0.1:27017"
@@ -28,17 +29,24 @@ type BTC struct {
 }
 
 func main() {
-	var choice , j
-	choice := application.choice
-	if choice == 1 {
-		j := Gecko
+	var inputReader *bufio.Reader
+	var input string
+	var err error
+	inputReader = bufio.NewReader(os.Stdin)
+	fmt.Println("Please enter some input: ")
+	input, err = inputReader.ReadString('\n')
+	if err == nil {
+		fmt.Printf("The input was: %s\n", inputReader)
 	}
-	else if choice == 2 {
-		j := Coinmarketcap
+	switch input{
+	case "1":
+		Gecko()
+	case "2":
+		Coinmarketcap()
+	case "3":
+		Coinapi()
 	}
-	else if choice == 3 {
-		j := Coinapi
-	} 
+	
 }
 
 	//連接資料庫
@@ -60,8 +68,8 @@ func Insert() {
 	i := bson.NewObjectId()
 	err := c.Insert(&BTC{
 		ID: i,
-		SourceName: j.sourcename,
-		Price: j.values,
+		SourceName: sourcename,
+		Price: values,
 		Time:time.Now(),
 	})
 	if err != nil {
@@ -144,7 +152,7 @@ func Coinapi()(string,string) {
 	values := value.String()
 	//println("USD : " + value.String())
 	//return (value.String())
-	sourcename := Coinapi
+	sourcename := "Coinapi"
 	return sourcename,values
    }
    
