@@ -12,64 +12,53 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"github.com/tidwall/gjson"
 	gecko "github.com/superoo7/go-gecko/v3"
-	"bufio"
-	//"btc/go"
 )
-
-
 const (
-	URL = "127.0.0.1:27017"
+	URL = "localhost:27017"
 )
 
 type BTC struct {
 	ID bson.ObjectId  `bson:"_id"`
 	SourceName string `bson:"sourcename"`
 	Price string `bson:"price"`
-	Time time.Time 
+	Time  time.Time
 }
 
 func main() {
-	var inputReader *bufio.Reader
-	var input string
-	var err error
-	inputReader = bufio.NewReader(os.Stdin)
-	fmt.Println("Please enter some input: ")
-	input, err = inputReader.ReadString('\n')
-	if err == nil {
-		fmt.Printf("The input was: %s\n", inputReader)
-	}
-	switch input{
-	case "1":
-		Gecko()
-	case "2":
-		Coinmarketcap()
-	case "3":
-		Coinapi()
-	}
-	
+	flow()
 }
 
-	//連接資料庫
+func flow()  {
+	Insert(Gecko())
+	Insert(Coinmarketcap())
+	Insert(Coinapi())
+	QueryGecko()
+	QueryCoinmarketcap()
+	QueryCoinapi()
+}
+
+//連接資料庫(ok)
 func Init()*mgo.Database {
 	session, err :=mgo.Dial(URL)
 	if err != nil {
 		panic(err)
 	}
-	defer session.Close()
+	//defer session.Close()
 	session.SetMode(mgo.Monotonic, true)
 	db := session.DB("mydb")
 	return db
 }
 
-//插入資料
-func Insert() {
+//插入資料(ok)
+func Insert(a string,b string) {
 	db := Init()
 	c := db.C("btc")
 	i := bson.NewObjectId()
+	//j,k := v()
 	err := c.Insert(&BTC{
 		ID: i,
-		SourceName: sourcename,
-		Price: values,
+		SourceName: a,
+		Price: b,
 		Time:time.Now(),
 	})
 	if err != nil {
@@ -78,8 +67,43 @@ func Insert() {
 	fmt.Println(err)
 }
 
-// 資料來源1(ok)
+//查詢資料Gecko
+func QueryGecko() {
+	db := Init()
+	c:= db.C("btc")
+	btc:=make([]BTC,0,100)
+	err := c.Find(bson.M{"sourcename":"Gecko"}).Sort("timestamp").Limit(1).All(&btc)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(btc)
+}
 
+//查詢資料Coinmarketcap
+func QueryCoinmarketcap() {
+	db := Init()
+	c:= db.C("btc")
+	btc:=make([]BTC,0,100)
+	err := c.Find(bson.M{"sourcename":"Coinmarketcap"}).Sort("timestamp").Limit(1).All(&btc)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(btc)
+}
+
+//查詢資料Coinapi
+func QueryCoinapi() {
+	db := Init()
+	c:= db.C("btc")
+	btc:=make([]BTC,0,100)
+	err := c.Find(bson.M{"sourcename":"Coinapi"}).Sort("timestamp").Limit(1).All(&btc)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(btc)
+}
+
+// 資料來源1
 func Gecko()(string,string) {
 	cg := gecko.NewClient(nil)
 
@@ -95,8 +119,7 @@ func Gecko()(string,string) {
 	//fmt.Println(Usd)
 }
 
-//資料來源2(ok)
-
+//資料來源2
 func Coinmarketcap()(string,string) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", nil)
@@ -130,7 +153,7 @@ func Coinmarketcap()(string,string) {
 	return sourcename,values
 }
 
-//資料來源3(ok)
+//資料來源3
 func Coinapi()(string,string) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://rest.coinapi.io/v1/symbols?filter_symbol_id=CHAOEX_SPOT_BTC_USDT", nil)
@@ -154,5 +177,4 @@ func Coinapi()(string,string) {
 	//return (value.String())
 	sourcename := "Coinapi"
 	return sourcename,values
-   }
-   
+}
