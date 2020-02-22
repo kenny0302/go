@@ -103,7 +103,19 @@ func QueryCoinapi() {
 	fmt.Println(btc)
 }
 
-// 資料來源1
+//查詢3筆最新資料
+func QueryAll() {
+	db := Init()
+	c:= db.C("btc")
+	btc:=make([]BTC,0,100)
+	err := c.Find(bson.M{}).Sort("timestamp").Limit(3).All(&btc)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(btc)
+}
+
+// 資料來源1(ok)
 func Gecko()(string,string) {
 	cg := gecko.NewClient(nil)
 
@@ -119,7 +131,7 @@ func Gecko()(string,string) {
 	//fmt.Println(Usd)
 }
 
-//資料來源2
+//資料來源2(ok)
 func Coinmarketcap()(string,string) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", nil)
@@ -153,7 +165,7 @@ func Coinmarketcap()(string,string) {
 	return sourcename,values
 }
 
-//資料來源3
+//資料來源3(ok)
 func Coinapi()(string,string) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://rest.coinapi.io/v1/symbols?filter_symbol_id=CHAOEX_SPOT_BTC_USDT", nil)
@@ -178,3 +190,4 @@ func Coinapi()(string,string) {
 	sourcename := "Coinapi"
 	return sourcename,values
 }
+   
