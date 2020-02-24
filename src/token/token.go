@@ -1,10 +1,11 @@
-package main
-
+package token
+ 
 import (
+    "net/http"
+	"golang.org/x/time/rate"
 	"os"
 	"fmt"
 	"io/ioutil"
-	"net/http"
 	"net/url"
 	"log"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/tidwall/gjson"
 	gecko "github.com/superoo7/go-gecko/v3"
 )
+
 const (
 	URL = "localhost:27017"
 )
@@ -24,20 +26,49 @@ type BTC struct {
 	Time  time.Time
 }
 
-func main() {
-	flow()
-}
-
-func flow()  {
+func Token()([]byte) {
+	var d string
+	var i []byte
 	Insert(Gecko())
 	Insert(Coinmarketcap())
 	Insert(Coinapi())
-	QueryGecko()
-	QueryCoinmarketcap()
-	QueryCoinapi()
+	a := string([]byte(QueryGecko()))
+	b := string([]byte(QueryCoinmarketcap()))
+	c := string([]byte(QueryCoinapi()))
+	d = a+b+c
+	i = []byte(d)
+	return i
 }
 
-//連接資料庫(ok)
+func main() {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/", Flow)
+	http.ListenAndServe(":8080", limit(mux))
+}
+
+//使用Token Bucket實作流量管制
+var limiter = rate.NewLimiter(2, 5)
+func limit(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        if limiter.Allow() == false {
+            http.Error(w, http.StatusText(429), http.StatusTooManyRequests)
+            return
+        }
+        next.ServeHTTP(w, r)
+    })
+}
+
+//api
+func Flow(w http.ResponseWriter, r *http.Request)  {
+	Insert(Gecko())
+	Insert(Coinmarketcap())
+	Insert(Coinapi())
+	w.Write([]byte(QueryGecko()))
+	w.Write([]byte(QueryCoinmarketcap()))
+	w.Write([]byte(QueryCoinapi()))
+}
+
+//連接資料庫
 func Init()*mgo.Database {
 	session, err :=mgo.Dial(URL)
 	if err != nil {
@@ -49,7 +80,7 @@ func Init()*mgo.Database {
 	return db
 }
 
-//插入資料(ok)
+//插入資料
 func Insert(a string,b string) {
 	db := Init()
 	c := db.C("btc")
@@ -68,7 +99,7 @@ func Insert(a string,b string) {
 }
 
 //查詢資料Gecko
-func QueryGecko() {
+func QueryGecko()([]byte) {
 	db := Init()
 	c:= db.C("btc")
 	btc:=make([]BTC,0,100)
@@ -76,11 +107,12 @@ func QueryGecko() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(btc)
+	btcs := []byte(fmt.Sprintln(btc))
+	return btcs
 }
 
 //查詢資料Coinmarketcap
-func QueryCoinmarketcap() {
+func QueryCoinmarketcap()([]byte) {
 	db := Init()
 	c:= db.C("btc")
 	btc:=make([]BTC,0,100)
@@ -88,11 +120,12 @@ func QueryCoinmarketcap() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(btc)
+	btcs := []byte(fmt.Sprintln(btc))
+	return btcs
 }
 
 //查詢資料Coinapi
-func QueryCoinapi() {
+func QueryCoinapi()([]byte) {
 	db := Init()
 	c:= db.C("btc")
 	btc:=make([]BTC,0,100)
@@ -100,7 +133,8 @@ func QueryCoinapi() {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(btc)
+	btcs := []byte(fmt.Sprintln(btc))
+	return btcs
 }
 
 //查詢3筆最新資料
