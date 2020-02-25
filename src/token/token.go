@@ -25,7 +25,7 @@ type BTC struct {
 	Price string `bson:"price"`
 	Time  time.Time
 }
-
+//websocket
 func Token()([]byte) {
 	var d string
 	var i []byte
@@ -74,7 +74,6 @@ func Init()*mgo.Database {
 	if err != nil {
 		panic(err)
 	}
-	//defer session.Close()
 	session.SetMode(mgo.Monotonic, true)
 	db := session.DB("mydb")
 	return db
@@ -85,7 +84,6 @@ func Insert(a string,b string) {
 	db := Init()
 	c := db.C("btc")
 	i := bson.NewObjectId()
-	//j,k := v()
 	err := c.Insert(&BTC{
 		ID: i,
 		SourceName: a,
@@ -149,7 +147,7 @@ func QueryAll() {
 	fmt.Println(btc)
 }
 
-// 資料來源1(ok)
+// 資料來源1
 func Gecko()(string,string) {
 	cg := gecko.NewClient(nil)
 
@@ -162,10 +160,9 @@ func Gecko()(string,string) {
 	values := usd
 	sourcename := "Gecko"
 	return sourcename,values
-	//fmt.Println(Usd)
 }
 
-//資料來源2(ok)
+//資料來源2
 func Coinmarketcap()(string,string) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://pro-api.coinmarketcap.com/v1/cryptocurrency/listings/latest", nil)
@@ -192,14 +189,12 @@ func Coinmarketcap()(string,string) {
 	body, err := ioutil.ReadAll(resp.Body)
    
 	value := gjson.Get(string(body), "data.0.quote.USD.price")
-	//println(value.String())
 	values :=value.String()
-	//return(value.String())
 	sourcename := "Coinmarketcap"
 	return sourcename,values
 }
 
-//資料來源3(ok)
+//資料來源3
 func Coinapi()(string,string) {
 	client := &http.Client{}
 	req, err := http.NewRequest("GET", "https://rest.coinapi.io/v1/symbols?filter_symbol_id=CHAOEX_SPOT_BTC_USDT", nil)
@@ -219,8 +214,6 @@ func Coinapi()(string,string) {
 	body, err := ioutil.ReadAll(resp.Body)
 	value := gjson.Get(string(body), "0.price")
 	values := value.String()
-	//println("USD : " + value.String())
-	//return (value.String())
 	sourcename := "Coinapi"
 	return sourcename,values
 }
